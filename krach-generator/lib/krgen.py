@@ -20,6 +20,7 @@ class Krach:
         
         while True:
             snd_file = random.choice(file_paths)
+            keypressed = input("Press any key")
             print("soundfile: " + str(snd_file))
             playsound(sounddir + os.sep + snd_file)
 
