@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os
+import glob
 import random
 import importlib
 import argparse
@@ -28,15 +29,23 @@ class Krach:
 
     def getSoundFiles(self) -> list:
         """
-        Returns a list of all files in a directory.
+        Returns a list of audio files in a directory.
+        Supported files are: mp3, wav , flac and ogg
+        To add file types, extend the formats list.
+        Do we want to make the formats configurable?
+        If we want this to be recursive, add an recursive:true to the glob.
 
         Returns:
         -------
-        list<str> = A list of all filenames of that directory as string.
+        list<str> = A list of all audio filepaths of that directory as string.
         """
+        file_list = []
         if not os.path.isdir(self.sounddir):
-            return []
-        return os.listdir(self.sounddir)
+            return file_list
+        formats=["*.mp3", "*.wav", "*.flac", "*.ogg"]
+        for extension in formats:
+            file_list = file_list + glob.glob(self.sounddir + os.sep + extension)
+        return file_list
 
     def __init__(self, sounddir:str, pin:int) -> None:
         """
@@ -70,8 +79,8 @@ class Krach:
 
         snd_file:str = File name of the file to play.
         """
-        print("playing: " + str(snd_file))
-        playsound(self.sounddir + os.sep + snd_file)
+        print("playing: " + os.path.basename(snd_file))
+        playsound(snd_file)
         
     def mainloop(self) -> None:
         """
