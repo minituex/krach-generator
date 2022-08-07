@@ -117,7 +117,7 @@ class Krach:
         self.observer.stop()
         self.observer.join(timeout=1)
 
-    def playfile(self, snd_file: str) -> None:
+    def play_file(self, snd_file: str) -> None:
         """
         Wrapper around playsound. Plays the given file.
 
@@ -126,8 +126,11 @@ class Krach:
 
         snd_file:str = File name of the file to play.
         """
-        print("playing: " + os.path.basename(snd_file))
-        playsound(snd_file)
+        if os.path.exists(snd_file):
+            print("playing: " + os.path.basename(snd_file))
+            playsound(snd_file)
+        else:
+            print("Could not play file: " + snd_file)
 
     def mainloop(self) -> None:
         """
@@ -142,12 +145,12 @@ class Krach:
             snd_file = random.choice(self.soundfiles)
             if self.haz_gpio:
                 if GPIO.input(10) == GPIO.HIGH:
-                    self.playfile(snd_file)
+                    self.play_file(snd_file)
             else:
                 inputstr = input("Press any key, q to quit:\n")
                 if inputstr.startswith("q"):
                     sys.exit(0)
-                self.playfile(snd_file)
+                self.play_file(snd_file)
 
 
 def main():
