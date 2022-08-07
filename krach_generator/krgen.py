@@ -13,6 +13,10 @@ from playsound import playsound
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+pi_spec = importlib.util.find_spec("RPi")
+if pi_spec is not None:
+    from RPi import GPIO
+
 
 class NewAudioFileHandler(FileSystemEventHandler):
     """
@@ -106,7 +110,6 @@ class Krach:
         gpio_spec = importlib.util.find_spec("RPi")
         self.haz_gpio = gpio_spec is not None
         if self.haz_gpio:
-            from RPi import GPIO
             print("Rasperry pi detected:\n\tusing pin: " + str(pin))
             self.setup_gpio(GPIO.BOARD, pin)
 
