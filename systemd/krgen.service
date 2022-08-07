@@ -1,0 +1,13 @@
+[Unit]
+Description=Krach-Generator
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/krach-generator
+ExecStart=/opt/krach-generator/.venv/bin/python3 -m krach-generator.lib.krgen
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
