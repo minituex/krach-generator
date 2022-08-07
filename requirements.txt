@@ -1,6 +1,4 @@
 wheel
-pytest
-coverage
 pylint
 flake8
 playsound
