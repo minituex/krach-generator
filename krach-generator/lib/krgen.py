@@ -21,6 +21,7 @@ class Krach:
         return os.listdir(self.sounddir)
 
     def __init__(self, sounddir:str, pin) -> None:
+        print("Sounddir: " + sounddir)
         self.sounddir = sounddir
         self.soundfiles = self.getSoundFiles()
         if self.soundfiles == []:
@@ -31,10 +32,11 @@ class Krach:
         self.haz_gpio = gpio_spec is not None
         if self.haz_gpio:
             import RPi.GPIO as GPIO
+            print("Rasperry pi detected:\n\tusing pin: " + str(pin))
             self.setupGPIO(GPIO.BOARD, pin)
     
     def playsound(self, snd_file:str) -> None:
-        print("soundfile: " + str(snd_file))
+        print("playing: " + str(snd_file))
         playsound(self.sounddir + os.sep + snd_file)
         
     def mainloop(self):
