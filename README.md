@@ -2,6 +2,7 @@
 
 ## Requirements
 * apt-get install python3 python-venv
+
 ## Installation
 * make venv
 
@@ -13,3 +14,5 @@
 ## Exit
 * deactivate
 
+## Systemd integration
+* see the systemd folder
