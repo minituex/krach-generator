@@ -1,6 +1,10 @@
 #! /usr/bin/env python3
+"""
+Krgen.py - Play random sounds on the push of a Button
+"""
 
 import os
+import sys
 import glob
 import random
 import importlib
@@ -8,6 +12,7 @@ import argparse
 from playsound import playsound
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
 
 class NewAudioFileHandler(FileSystemEventHandler):
     """
@@ -20,14 +25,16 @@ class NewAudioFileHandler(FileSystemEventHandler):
         events = ['created', 'deleted', 'modified', 'moved']
         if event.event_type in events:
             print("Files in sound direcotry changed - updateing")
-            self.krach.updateSoundFiles()
+            self.krach.update_sound_files()
             print("\t...done")
+
+
 class Krach:
     """
     Class to play a random sound from a direcotry on the press of a key/button.
     """
 
-    def setupGPIO(self, mode, pin: int) -> None:
+    def setup_gpio(self, mode, pin: int) -> None:
         """
         Initializes the GPIO if we are on a raspberry pi.
         By default pin 10 is used, initialy pulled low, with the GPIO.BOARD numbering scheme.
@@ -38,11 +45,15 @@ class Krach:
         pin:int = Pin number to use (Default: 10)
         """
         if self.haz_gpio:
-            GPIO.setwarnings(False) # Ignore warning for now
-            GPIO.setmode(mode) # Use physical pin numbering: GPIO.BOARD
-            GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin 10 to be an input pin and set initial value to be pulled low (off)
+            GPIO.setwarnings(False)
 
-    def getSoundFiles(self) -> list:
+            # Use physical pin numbering: GPIO.BOARD
+            GPIO.setmode(mode)
+
+            # Set pin 10 to be an input pin and set initial value to be pulled low (off)
+            GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+    def get_sound_files(self) -> list:
         """
         Returns a list of audio files in a directory.
         Supported files are: mp3, wav , flac and ogg
@@ -57,18 +68,21 @@ class Krach:
         file_list = []
         if not os.path.isdir(self.sounddir):
             return file_list
-        formats=["*.mp3", "*.wav", "*.flac", "*.ogg"]
+        formats = ["*.mp3", "*.wav", "*.flac", "*.ogg"]
         for extension in formats:
             file_list = file_list + glob.glob(self.sounddir + os.sep + extension)
         return file_list
 
-    def updateSoundFiles(self):
-        self.updateFileList = True
+    def update_sound_files(self):
+        """
+        Relist all soundfiles in the sound directory
+        """
+        self.update_file_list = True
         self.soundfiles = []
-        self.soundfiles = self.getSoundFiles()
-        self.updateFileList = False
+        self.soundfiles = self.get_sound_files()
+        self.update_file_list = False
 
-    def __init__(self, sounddir:str, pin:int) -> None:
+    def __init__(self, sounddir: str, pin: int) -> None:
         """
         Initialise the Krach-object.
 
@@ -79,11 +93,11 @@ class Krach:
         """
         print("Sounddir: " + sounddir)
         self.sounddir = sounddir
-        self.updateSoundFiles()
+        self.update_sound_files()
         if self.soundfiles == []:
             print("No sounds to play - exiting...")
-            exit(0)
-        
+            sys.exit(0)
+
         self.observer = Observer()
         self.handler = NewAudioFileHandler(self)
         self.observer.schedule(self.handler, self.sounddir)
@@ -92,18 +106,18 @@ class Krach:
         gpio_spec = importlib.util.find_spec("RPi")
         self.haz_gpio = gpio_spec is not None
         if self.haz_gpio:
-            import RPi.GPIO as GPIO
+            from RPi import GPIO
             print("Rasperry pi detected:\n\tusing pin: " + str(pin))
-            self.setupGPIO(GPIO.BOARD, pin)
-    
+            self.setup_gpio(GPIO.BOARD, pin)
+
     def __del__(self):
         """
         Make sure we clan up the watchdog
         """
         self.observer.stop()
         self.observer.join(timeout=1)
-    
-    def playsound(self, snd_file:str) -> None:
+
+    def playfile(self, snd_file: str) -> None:
         """
         Wrapper around playsound. Plays the given file.
 
@@ -114,7 +128,7 @@ class Krach:
         """
         print("playing: " + os.path.basename(snd_file))
         playsound(snd_file)
-        
+
     def mainloop(self) -> None:
         """
         Main loop: Check if enter is pressed or, if we have a pi, a button was pressed.
@@ -123,18 +137,19 @@ class Krach:
         and then quit.
         """
         while True:
-            if self.updateFileList:
+            if self.update_file_list:
                 continue
             snd_file = random.choice(self.soundfiles)
             if self.haz_gpio:
                 if GPIO.input(10) == GPIO.HIGH:
-                    self.playsound(snd_file)
+                    self.playfile(snd_file)
             else:
                 inputstr = input("Press any key, q to quit:\n")
                 if inputstr.startswith("q"):
-                    exit(0)
-                self.playsound(snd_file)
-            
+                    sys.exit(0)
+                self.playfile(snd_file)
+
+
 def main():
     """
     Main function if we use krgen.py not as lib.
@@ -142,12 +157,14 @@ def main():
     initialize Krach-object with them, then run the main loop.
     """
     parser = argparse.ArgumentParser(description='Bring the noise')
-    parser.add_argument('-s','--sounds', default=os.getcwd()+os.sep+"sounds", help="Sound directory (Default: cwd/sounds")
+    parser.add_argument('-s', '--sounds', default=os.getcwd()+os.sep+"sounds",
+                        help="Sound directory (Default: cwd/sounds")
     parser.add_argument('-p', '--pin', default=10, help="Raspberry pi GPIO Pin Number (Default:10)")
     args = parser.parse_args()
 
     gerausch = Krach(os.path.abspath(args.sounds), args.pin)
     gerausch.mainloop()
+
 
 if __name__ == '__main__':
     main()
