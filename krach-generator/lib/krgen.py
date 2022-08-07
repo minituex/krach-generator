@@ -20,7 +20,7 @@ class Krach:
             return []
         return os.listdir(self.sounddir)
 
-    def __init__(self, sounddir:str) -> None:
+    def __init__(self, sounddir:str, pin) -> None:
         self.sounddir = sounddir
         self.soundfiles = self.getSoundFiles()
         if self.soundfiles == []:
@@ -31,7 +31,7 @@ class Krach:
         self.haz_gpio = gpio_spec is not None
         if self.haz_gpio:
             import RPi.GPIO as GPIO
-            self.setupGPIO(GPIO.BOARD, 10)
+            self.setupGPIO(GPIO.BOARD, pin)
     
     def playsound(self, snd_file:str) -> None:
         print("soundfile: " + str(snd_file))
@@ -53,9 +53,10 @@ class Krach:
 def main():
     parser = argparse.ArgumentParser(description='Bring the noise')
     parser.add_argument('-s','--sounds', default=os.getcwd()+os.sep+"sounds", help="Sound directory (Default: cwd/sounds")
+    parser.add_argument('-p', '--pin', default=10, help="Raspberry pi GPIO Pin Number (Default:10)")
     args = parser.parse_args()
 
-    gerausch = Krach(os.path.abspath(args.sounds))
+    gerausch = Krach(os.path.abspath(args.sounds), args.pin)
     gerausch.mainloop()
 
 if __name__ == '__main__':
