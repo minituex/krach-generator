@@ -6,7 +6,22 @@ import random
 import importlib
 import argparse
 from playsound import playsound
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
+class NewAudioFileHandler(FileSystemEventHandler):
+    """
+    Watch for changs in sounddir and update the list if files are changed
+    """
+    def __init__(self, gerausch):
+        self.krach = gerausch
+
+    def on_any_event(self, event):
+        events = ['created', 'deleted', 'modified', 'moved']
+        if event.event_type in events:
+            print("Files in sound direcotry changed - updateing")
+            self.krach.updateSoundFiles()
+            print("\t...done")
 class Krach:
     """
     Class to play a random sound from a direcotry on the press of a key/button.
@@ -47,6 +62,12 @@ class Krach:
             file_list = file_list + glob.glob(self.sounddir + os.sep + extension)
         return file_list
 
+    def updateSoundFiles(self):
+        self.updateFileList = True
+        self.soundfiles = []
+        self.soundfiles = self.getSoundFiles()
+        self.updateFileList = False
+
     def __init__(self, sounddir:str, pin:int) -> None:
         """
         Initialise the Krach-object.
@@ -58,10 +79,15 @@ class Krach:
         """
         print("Sounddir: " + sounddir)
         self.sounddir = sounddir
-        self.soundfiles = self.getSoundFiles()
+        self.updateSoundFiles()
         if self.soundfiles == []:
             print("No sounds to play - exiting...")
             exit(0)
+        
+        self.observer = Observer()
+        self.handler = NewAudioFileHandler(self)
+        self.observer.schedule(self.handler, self.sounddir)
+        self.observer.start()
 
         gpio_spec = importlib.util.find_spec("RPi")
         self.haz_gpio = gpio_spec is not None
@@ -69,6 +95,13 @@ class Krach:
             import RPi.GPIO as GPIO
             print("Rasperry pi detected:\n\tusing pin: " + str(pin))
             self.setupGPIO(GPIO.BOARD, pin)
+    
+    def __del__(self):
+        """
+        Make sure we clan up the watchdog
+        """
+        self.observer.stop()
+        self.observer.join(timeout=1)
     
     def playsound(self, snd_file:str) -> None:
         """
@@ -90,6 +123,8 @@ class Krach:
         and then quit.
         """
         while True:
+            if self.updateFileList:
+                continue
             snd_file = random.choice(self.soundfiles)
             if self.haz_gpio:
                 if GPIO.input(10) == GPIO.HIGH:
