@@ -136,12 +136,16 @@ class Krach:
         else:
             print("Could not play file: " + snd_file)
 
-    def mainloop(self) -> None:
+    def mainloop(self, forcekeyboard: bool) -> None:
         """
         Main loop: Check if enter is pressed or, if we have a pi, a button was pressed.
         If so, we play a random file from the file list.
         If we do use the keyboard as input (no pi), we also test if q was pressed
         and then quit.
+
+        Parameters:
+        -----------
+        forcekeyboard: bool = Enable keyboard handling on raspberry pi
         """
         while True:
             if self.update_file_list:
@@ -150,7 +154,8 @@ class Krach:
             if self.haz_gpio:
                 if GPIO.input(10) == GPIO.HIGH:
                     self.play_file(snd_file)
-            else:
+            
+            if not self.haz_gpio or forcekeyboard:
                 inputstr = input("Press any key, q to quit:\n")
                 if inputstr.startswith("q"):
                     sys.exit(0)
@@ -167,10 +172,12 @@ def main():
     parser.add_argument('-s', '--sounds', default=os.getcwd()+os.sep+"sounds",
                         help="Sound directory (Default: cwd/sounds")
     parser.add_argument('-p', '--pin', default=10, help="Raspberry pi GPIO Pin Number (Default:10)")
+    parser.add_argument('-k', '--force-keyboard', default=False, action='store_true', 
+                        help='Force additional Keyboard handling on raspberry pi')
     args = parser.parse_args()
 
     gerausch = Krach(os.path.abspath(args.sounds), args.pin)
-    gerausch.mainloop()
+    gerausch.mainloop(args.force_keyboard)
 
 
 if __name__ == '__main__':
