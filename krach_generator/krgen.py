@@ -117,8 +117,9 @@ class Krach:
         """
         Make sure we clan up the watchdog
         """
-        self.observer.stop()
-        self.observer.join(timeout=1)
+        if hasattr(self, 'observer'):
+            self.observer.stop()
+            self.observer.join(timeout=1)
 
     def play_file(self, snd_file: str) -> None:
         """
