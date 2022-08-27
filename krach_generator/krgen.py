@@ -9,7 +9,8 @@ import glob
 import random
 import importlib
 import argparse
-from playsound import playsound
+#from playsound import playsound
+import pygame
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -132,9 +133,9 @@ class Krach:
         """
         if os.path.exists(snd_file):
             print("playing: " + os.path.basename(snd_file))
-            playsound(snd_file)
-        else:
-            print("Could not play file: " + snd_file)
+            pygame.mixer.init()
+            pygame.mixer.music.load(snd_file)
+            pygame.mixer.music.play()
 
     def mainloop(self, forcekeyboard: bool) -> None:
         """

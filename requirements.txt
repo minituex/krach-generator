@@ -1,6 +1,5 @@
 wheel
 pylint
 flake8
-playsound
 watchdog
-pygobject
+pygame
