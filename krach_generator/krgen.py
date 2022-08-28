@@ -8,8 +8,8 @@ import sys
 import glob
 import random
 import importlib
+import importlib.util
 import argparse
-#from playsound import playsound
 import pygame
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -42,12 +42,12 @@ class Krach:
     def setup_gpio(self, mode, pin: int) -> None:
         """
         Initializes the GPIO if we are on a raspberry pi.
-        By default pin 10 is used, initialy pulled low, with the GPIO.BOARD numbering scheme.
+        By default pin 22 is used, initialy pulled low, with the GPIO.BOARD numbering scheme.
 
         Parameters:
         -----------
         mode = Pin numbering scheme for the GPIO (Default: GPIO.BOARD)
-        pin:int = Pin number to use (Default: 10)
+        pin:int = Pin number to use (Default: 22)
         """
         if self.haz_gpio:
             GPIO.setwarnings(False)
@@ -55,7 +55,7 @@ class Krach:
             # Use physical pin numbering: GPIO.BOARD
             GPIO.setmode(mode)
 
-            # Set pin 10 to be an input pin and set initial value to be pulled low (off)
+            # Set pin 22 to be an input pin and set initial value to be pulled low (off)
             GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     def get_sound_files(self) -> list:
@@ -107,6 +107,7 @@ class Krach:
         self.handler = NewAudioFileHandler(self)
         self.observer.schedule(self.handler, self.sounddir)
         self.observer.start()
+        self.pin = pin
 
         gpio_spec = importlib.util.find_spec("RPi")
         self.haz_gpio = gpio_spec is not None
@@ -131,6 +132,8 @@ class Krach:
 
         snd_file:str = File name of the file to play.
         """
+        if pygame.mixer.get_busy() == True:
+            return
         if os.path.exists(snd_file):
             print("playing: " + os.path.basename(snd_file))
             pygame.mixer.init()
@@ -148,14 +151,15 @@ class Krach:
         -----------
         forcekeyboard: bool = Enable keyboard handling on raspberry pi
         """
+        pushed = False
         while True:
             if self.update_file_list:
                 continue
             snd_file = random.choice(self.soundfiles)
             if self.haz_gpio:
-                if GPIO.input(10) == GPIO.HIGH:
+                if GPIO.input(self.pin) == GPIO.LOW and pygame.mixer.get_busy() == False:
                     self.play_file(snd_file)
-            
+
             if not self.haz_gpio or forcekeyboard:
                 inputstr = input("Press any key, q to quit:\n")
                 if inputstr.startswith("q"):
@@ -172,7 +176,7 @@ def main():
     parser = argparse.ArgumentParser(description='Bring the noise')
     parser.add_argument('-s', '--sounds', default=os.getcwd()+os.sep+"sounds",
                         help="Sound directory (Default: cwd/sounds")
-    parser.add_argument('-p', '--pin', default=10, help="Raspberry pi GPIO Pin Number (Default:10)")
+    parser.add_argument('-p', '--pin', default=22, help="Raspberry pi GPIO Pin Number (Default:22)")
     parser.add_argument('-k', '--force-keyboard', default=False, action='store_true', 
                         help='Force additional Keyboard handling on raspberry pi')
     args = parser.parse_args()
